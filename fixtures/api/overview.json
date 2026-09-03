@@ -1,0 +1,69 @@
+{
+  "maturity": {
+    "equity": {
+      "class_key": "equity",
+      "underlying": null,
+      "tier": "suppressed",
+      "pooled_live_days": 2,
+      "threshold_days": 60,
+      "suppress_below_days": 10,
+      "display": "insufficient data, 2/60 pooled days",
+      "probability_permitted": false,
+      "reason": "suppressed_insufficient_live_days"
+    },
+    "futures": {
+      "class_key": "futures",
+      "underlying": null,
+      "tier": "suppressed",
+      "pooled_live_days": 2,
+      "threshold_days": 60,
+      "suppress_below_days": 10,
+      "display": "insufficient data, 2/60 pooled days",
+      "probability_permitted": false,
+      "reason": "suppressed_insufficient_live_days"
+    },
+    "options_nifty": {
+      "class_key": "options",
+      "underlying": "NIFTY",
+      "tier": "suppressed",
+      "pooled_live_days": 2,
+      "threshold_days": 60,
+      "suppress_below_days": 10,
+      "display": "insufficient data, 2/60 pooled days",
+      "probability_permitted": false,
+      "reason": "suppressed_insufficient_live_days",
+      "note": "Cumulative trading days across the rolling contract sequence, not per individual weekly/monthly contract."
+    },
+    "options_banknifty": {
+      "class_key": "options",
+      "underlying": "BANKNIFTY",
+      "tier": "suppressed",
+      "pooled_live_days": 2,
+      "threshold_days": 60,
+      "suppress_below_days": 10,
+      "display": "insufficient data, 2/60 pooled days",
+      "probability_permitted": false,
+      "reason": "suppressed_insufficient_live_days",
+      "note": "Cumulative trading days across the rolling contract sequence, not per individual weekly/monthly contract."
+    }
+  },
+  "as_of": "2026-09-02T12:00:00+00:00",
+  "last_ingest": {
+    "timestamp": "2026-09-02T10:00:00+00:00",
+    "event_type": "shutdown",
+    "message": "fixture"
+  },
+  "last_feature": "2026-09-02",
+  "last_signal": "2026-09-02",
+  "processing_status": {
+    "features": {"job": "features", "status": "ok", "last_trade_date": "2026-09-02"},
+    "labels": {"job": "labels", "status": "unknown"},
+    "signals": {"job": "signals", "status": "ok", "last_trade_date": "2026-09-02"},
+    "account": {"job": "account", "status": "unknown"}
+  },
+  "signal_counts": {
+    "total": 1,
+    "live_engine": 1,
+    "suppressed": 1
+  }
+}
