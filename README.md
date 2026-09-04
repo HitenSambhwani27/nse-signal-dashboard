@@ -1,31 +1,52 @@
-# NSE Signal Dashboard
+# NSE Terminal
 
-Separate UI for the NSE signal pipeline. **This repo must not import `nse_pipeline`
-and must not open the pipeline SQLite file.**
+Read-only professional market terminal for the NSE signal pipeline.
 
-## Fixture mode (no VM / no API)
+This repository must **not** import `nse_pipeline`, open the pipeline SQLite file,
+talk to Kite, or invent market data. The FastAPI service on `:8080` is the source of truth.
+
+## Run the terminal
 
 ```powershell
 cd C:\Users\sambh\nse-signal-dashboard
-$env:NSE_USE_FIXTURES = "1"
-# or: $env:NSE_API_URL = "mock"
-streamlit run src/nse_dashboard/app.py
+copy .env.example .env.local
+npm install
+npm run dev
 ```
 
-Default fixtures are suppressed: `insufficient data, 2/60 pooled days` and
-`probability=null`. The maturity banner is required on every page.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-## Live API (SSH tunnel to the VM)
+The Next.js rewrite proxy forwards `/api/v1/*` to `API_BASE_URL` (default `http://127.0.0.1:8080`).
+Leave `NEXT_PUBLIC_API_BASE_URL` empty so the browser stays same-origin and avoids CORS.
 
-On the VM the pipeline API binds `127.0.0.1:8080`. From the PC:
+Live API through an SSH tunnel:
 
 ```powershell
 ssh -L 8080:127.0.0.1:8080 nse@<vm-host>
-$env:NSE_API_URL = "http://127.0.0.1:8080"
-streamlit run src/nse_dashboard/app.py
+$env:API_BASE_URL = "http://127.0.0.1:8080"
+npm run dev
 ```
 
-Do not copy `.env`, API keys, or production SQLite here.
+## Checks
 
-Until 60 pooled live days, every page shows **insufficient data, N/60 pooled days**
-and never a probability.
+```powershell
+npm run lint
+npm run typecheck
+npm test
+npm run build
+pytest
+```
+
+## Maturity
+
+Until 60 pooled live days, every envelope shows **insufficient data, N/60 pooled days**.
+The terminal never fabricates a probability.
+
+## Candlesticks
+
+`GET /api/v1/charts/{symbol}` currently returns downsampled observation points
+(`last_price`, `volume`, `oi`, …), not OHLC candles. The candlestick panel stays
+on an honest unavailable state until the backend exposes candle fields.
+
+Python helpers under `src/nse_dashboard/` remain for fixture-mode pytest only.
+The Streamlit UI has been retired.

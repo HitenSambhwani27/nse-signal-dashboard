@@ -3,3 +3,10 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .env
+.env.local
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+)

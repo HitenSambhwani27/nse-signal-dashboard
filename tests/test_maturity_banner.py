@@ -68,6 +68,8 @@ def test_probability_column_uses_display_string() -> None:
 
 
 def test_dashboard_does_not_import_pipeline() -> None:
+    from pathlib import Path
+
     import nse_dashboard.app as app
     import nse_dashboard.banner as banner
     import nse_dashboard.client as client
@@ -80,6 +82,18 @@ def test_dashboard_does_not_import_pipeline() -> None:
         assert "sqlite3" not in text
         assert "SQLiteStore" not in text
         assert "kite" not in text.lower()
+
+    root = Path(__file__).resolve().parents[1] / "src"
+    for path in root.rglob("*"):
+        if path.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx", ".py"}:
+            continue
+        text = path.read_text(encoding="utf-8")
+        assert "import nse_pipeline" not in text
+        assert "from nse_pipeline" not in text
+        lowered = text.lower()
+        assert "sqlite3.connect" not in lowered
+        assert "api_key" not in lowered
+        assert "api_secret" not in lowered
 
 
 def test_fixture_mode_loads_2_of_60_without_network(monkeypatch) -> None:
