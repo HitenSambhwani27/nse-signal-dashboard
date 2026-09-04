@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Streamlit executes this file as a script, so the package root is not on
+# sys.path unless the project was installed. Keep `streamlit run` working.
+_SRC = Path(__file__).resolve().parents[1]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
 import streamlit as st
 
 from nse_dashboard.banner import MaturityBanner, probability_cell
