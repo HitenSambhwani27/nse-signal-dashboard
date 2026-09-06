@@ -3,6 +3,7 @@ import {
   EnvelopeError,
   assertNoFabricatedProbability,
   chainStatusLabel,
+  maturityViews,
   parseEnvelope,
   probabilityCell,
 } from "@/api/envelope";
@@ -64,6 +65,29 @@ describe("maturity / probability", () => {
       }),
     ).toThrow();
     expect(() => assertNoFabricatedProbability(suppressed)).not.toThrow();
+  });
+});
+
+describe("maturityViews keys", () => {
+  it("keeps unique envelope keys when both option classes share class_key", () => {
+    const views = maturityViews({
+      options_nifty: {
+        class_key: "options",
+        underlying: "NIFTY",
+        display: "insufficient data",
+        probability_permitted: false,
+      },
+      options_banknifty: {
+        class_key: "options",
+        underlying: "BANKNIFTY",
+        display: "insufficient data",
+        probability_permitted: false,
+      },
+    });
+    const keys = views.map((v) => v.envelope_key);
+    expect(keys).toEqual(["options_nifty", "options_banknifty"]);
+    expect(new Set(keys).size).toBe(2);
+    expect(views.every((v) => v.class_key === "options")).toBe(true);
   });
 });
 

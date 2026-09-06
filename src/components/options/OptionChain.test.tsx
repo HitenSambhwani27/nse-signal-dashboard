@@ -81,6 +81,12 @@ describe("chain status badge", () => {
     render(<ChainStatusBadge status="truncated" truncated />);
     expect(screen.getByText(/subscription limit/i)).toBeInTheDocument();
   });
+
+  it("does not call a listed chain live-complete when quotes are empty", () => {
+    render(<ChainStatusBadge status="complete" quoteStatus="empty" />);
+    expect(screen.getByText(/no live quotes/i)).toBeInTheDocument();
+    expect(screen.queryByText(/chain complete/i)).not.toBeInTheDocument();
+  });
 });
 
 describe("financial table", () => {

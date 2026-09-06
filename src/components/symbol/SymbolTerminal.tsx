@@ -31,13 +31,14 @@ import { ErrorState, LoadingState } from "@/components/data/States";
 import { FuturesPanel } from "@/components/futures/FuturesPanel";
 import { OptionChainTable } from "@/components/options/OptionChain";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { extractCandles, filterPointsByTimeframe } from "@/lib/candles";
+import { extractCandles, pointsOnSessionDate, resolveDisplayedPoints } from "@/lib/candles";
 import {
   formatInr,
   formatOi,
   formatPcr,
   formatQty,
   formatVolume,
+  hasSessionOhlc,
 } from "@/lib/format";
 import {
   CHART_TIMEFRAMES,
@@ -113,7 +114,10 @@ function Overview({ symbol }: { symbol: string }) {
         <MetricCard label="Volume" value={formatVolume(quote.volume)} />
         <MetricCard label="Last trade qty" value={formatQty(quote.last_quantity)} />
         <MetricCard label="Average price" value={formatInr(quote.average_price)} />
-        <MetricCard label="OI" value={formatOi(quote.oi)} />
+        <MetricCard
+          label="OI"
+          value={quote.missing_fields?.includes("oi") ? "—" : formatOi(quote.oi)}
+        />
         <MetricCard label="Bid" value={formatInr(quote.best_bid)} />
         <MetricCard label="Ask" value={formatInr(quote.best_ask)} />
         <MetricCard label="Spread" value={formatInr(quote.spread)} />
@@ -125,7 +129,7 @@ function Overview({ symbol }: { symbol: string }) {
         <MetricCard label="Sell qty (displayed)" value={formatQty(quote.sell_quantity)} />
       </div>
       <DepthChart quote={quote} />
-      {quote.ohlc ? (
+      {hasSessionOhlc(quote.ohlc) && quote.ohlc ? (
         <div className="panel">
           <div className="panel-h">Session OHLC on snapshot (not a candle history)</div>
           <div className="panel-b grid-4">
@@ -141,11 +145,23 @@ function Overview({ symbol }: { symbol: string }) {
 }
 
 function ChartTab({ symbol, tf }: { symbol: string; tf: ChartTimeframe }) {
-  const q = useApiQuery<ChartsResponse>(chartsPath(symbol), 8000);
   const [localTf, setLocalTf] = useState<ChartTimeframe>(tf);
+  const q = useApiQuery<ChartsResponse>(chartsPath(symbol, localTf), 8000);
   const [series, setSeries] = useState<"price" | "volume" | "oi" | "oi_delta" | "volume_delta" | "candle">("price");
-  const points = filterPointsByTimeframe(q.data?.chart?.points ?? [], localTf);
-  const candles = extractCandles(q.data?.chart);
+  const chart = q.data?.chart;
+  const resolved = resolveDisplayedPoints(chart?.points ?? [], localTf);
+  const points = resolved.points;
+  const candles = extractCandles(
+    chart
+      ? {
+          ...chart,
+          candles:
+            resolved.mode === "empty"
+              ? []
+              : pointsOnSessionDate(chart.candles ?? [], resolved.sessionDate),
+        }
+      : null,
+  );
   if (q.status === "loading" && !q.data) return <LoadingState />;
   if (q.status === "error" && !q.data) return <ErrorState detail={q.error} />;
   return (
@@ -167,7 +183,16 @@ function ChartTab({ symbol, tf }: { symbol: string; tf: ChartTimeframe }) {
         </div>
         <DataFreshnessBadge asOf={q.data?.as_of} />
       </div>
-      <ChartPanel title={`${symbol} ${series}`}>
+      <ChartPanel
+        title={`${symbol} ${series}`}
+        extra={
+          resolved.mode === "last_session" ? (
+            <span className="page-sub">Last available session: {resolved.sessionDate}</span>
+          ) : resolved.mode === "empty" ? (
+            <span className="page-sub">No observations in the selected window</span>
+          ) : null
+        }
+      >
         {series === "price" ? <PriceChart points={points} /> : null}
         {series === "volume" ? <VolumeChart points={points} /> : null}
         {series === "oi" ? <OIChart points={points} /> : null}
@@ -188,7 +213,11 @@ function OptionsTab({ underlying, expiry }: { underlying: string; expiry: string
   return (
     <div className="stack">
       <div className="row">
-        <ChainStatusBadge status={chain.chain_status} truncated={chain.truncated} />
+        <ChainStatusBadge
+          status={chain.chain_status}
+          truncated={chain.truncated}
+          quoteStatus={chain.quote_status}
+        />
         <MetricCard label="PCR" value={formatPcr(chain.pcr_oi)} />
         <MetricCard label="ATM" value={chain.atm == null ? "—" : String(chain.atm)} />
         <Link className="btn" href={`/options/${encodeURIComponent(underlying)}`}>

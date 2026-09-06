@@ -59,7 +59,10 @@ export default function SettingsPage() {
           ) : (
             <div className="grid-2">
               {views.map((v) => (
-                <div key={v.class_key || v.underlying || "row"} className="index-card">
+                <div
+                  key={v.envelope_key || [v.class_key, v.underlying].filter(Boolean).join("-") || "row"}
+                  className="index-card"
+                >
                   <div>
                     <div className="name">{v.class_key}</div>
                     <div>{v.display}</div>

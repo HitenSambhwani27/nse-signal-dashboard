@@ -8,7 +8,7 @@ import {
   formatRatioPct,
 } from "@/lib/format";
 import { classifyFreshness, marketStatus } from "@/lib/freshness";
-import { extractCandles } from "@/lib/candles";
+import { extractCandles, filterPointsByTimeframe, latestSessionDate, resolveDisplayedPoints } from "@/lib/candles";
 import { symbolHref } from "@/lib/instruments";
 
 describe("number formatting", () => {
@@ -63,6 +63,39 @@ describe("candles", () => {
       downsampled: false,
     });
     expect(candles).toBeNull();
+  });
+
+  it("does not silently widen an empty timeframe window", () => {
+    const points = [{ timestamp: "2026-08-01T10:00:00+00:00", last_price: 100 }];
+    const filtered = filterPointsByTimeframe(points, "1m", Date.parse("2026-09-04T10:00:00+00:00"));
+    expect(filtered).toHaveLength(0);
+    expect(latestSessionDate(points)).toBe("2026-08-01");
+    const resolved = resolveDisplayedPoints(points, "1m", Date.parse("2026-09-04T10:00:00+00:00"));
+    expect(resolved.mode).toBe("last_session");
+    expect(resolved.sessionDate).toBe("2026-08-01");
+    expect(resolved.points).toHaveLength(1);
+  });
+
+  it("prefers a dedicated candles array over last_price points", () => {
+    const candles = extractCandles({
+      points: [
+        { timestamp: "2026-09-04T10:00:00+00:00", last_price: 100, volume: 1 },
+      ],
+      candles: [
+        {
+          timestamp: "2026-09-04T10:00:00+00:00",
+          open: 100,
+          high: 102,
+          low: 99,
+          close: 101,
+        },
+      ],
+      observation_count: 1,
+      returned_points: 1,
+      downsampled: false,
+    });
+    expect(candles).toHaveLength(1);
+    expect(candles?.[0].close).toBe(101);
   });
 
   it("accepts backend OHLC when present", () => {

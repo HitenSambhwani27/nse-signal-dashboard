@@ -16,8 +16,12 @@ function numCell(text: string, raw: number | null | undefined) {
 }
 
 function ivCell(side: OptionSide | null) {
-  if (!side || side.iv == null) return <span className="null">N/A</span>;
-  return cell(side.iv.toFixed(2));
+  if (!side) return <span className="null">N/A</span>;
+  const pct =
+    side.iv_pct ??
+    (side.iv == null ? null : side.iv <= 3 ? side.iv * 100 : side.iv);
+  if (pct == null) return <span className="null">N/A</span>;
+  return cell(pct.toFixed(2));
 }
 
 function SideCells({

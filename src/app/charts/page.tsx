@@ -11,7 +11,7 @@ import { ActivityChart, OIChart, OIDeltaChart, VolumeChart, VolumeDeltaChart } f
 import { DataFreshnessBadge } from "@/components/data/Badges";
 import { ErrorState, LoadingState } from "@/components/data/States";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { extractCandles, filterPointsByTimeframe } from "@/lib/candles";
+import { extractCandles, pointsOnSessionDate, resolveDisplayedPoints } from "@/lib/candles";
 import { CHART_TIMEFRAMES, INDEX_INSTRUMENTS, type ChartTimeframe } from "@/lib/instruments";
 
 export default function ChartsIndexPage() {
@@ -24,9 +24,21 @@ export default function ChartsIndexPage() {
   const [symbol, setSymbol] = useState("NIFTY 50");
   const [tf, setTf] = useState<ChartTimeframe>("1D");
   const [series, setSeries] = useState<"price" | "volume" | "oi" | "oi_delta" | "volume_delta" | "candle">("price");
-  const q = useApiQuery<ChartsResponse>(chartsPath(symbol), 8000);
-  const points = filterPointsByTimeframe(q.data?.chart?.points ?? [], tf);
-  const candles = extractCandles(q.data?.chart);
+  const q = useApiQuery<ChartsResponse>(chartsPath(symbol, tf), 8000);
+  const chart = q.data?.chart;
+  const resolved = resolveDisplayedPoints(chart?.points ?? [], tf);
+  const points = resolved.points;
+  const candles = extractCandles(
+    chart
+      ? {
+          ...chart,
+          candles:
+            resolved.mode === "empty"
+              ? []
+              : pointsOnSessionDate(chart.candles ?? [], resolved.sessionDate),
+        }
+      : null,
+  );
   return (
     <div className="stack">
       <div className="page-head">
@@ -66,9 +78,18 @@ export default function ChartsIndexPage() {
         <ChartPanel
           title={`${symbol} · ${series} · ${tf}`}
           extra={
-            q.data?.chart?.downsampled ? (
-              <span className="page-sub">downsampled {q.data.chart.returned_points}/{q.data.chart.observation_count}</span>
-            ) : null
+            <span className="page-sub">
+              {resolved.mode === "last_session"
+                ? `Last available session: ${resolved.sessionDate}`
+                : resolved.mode === "empty"
+                  ? "No observations in the selected window"
+                  : q.data?.chart?.interval
+                    ? `interval ${q.data.chart.interval}`
+                    : null}
+              {q.data?.chart?.downsampled
+                ? ` · downsampled ${q.data.chart.returned_points}/${q.data.chart.observation_count}`
+                : null}
+            </span>
           }
         >
           {series === "price" ? <PriceChart points={points} /> : null}

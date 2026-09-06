@@ -33,12 +33,14 @@ export function maturityViews(maturity: MaturityMap | null | undefined): Maturit
   for (const key of order) {
     const view = maturity[key];
     if (view) {
-      out.push({ ...view, class_key: view.class_key ?? key });
+      out.push({ ...view, class_key: view.class_key ?? key, envelope_key: key });
       seen.add(key);
     }
   }
   for (const [key, view] of Object.entries(maturity)) {
-    if (!seen.has(key) && view) out.push({ ...view, class_key: view.class_key ?? key });
+    if (!seen.has(key) && view) {
+      out.push({ ...view, class_key: view.class_key ?? key, envelope_key: key });
+    }
   }
   return out;
 }

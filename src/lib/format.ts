@@ -134,3 +134,13 @@ export function formatInsufficient(days: number | null | undefined, threshold = 
   const n = days ?? 0;
   return `Insufficient data, ${n}/${threshold} pooled days`;
 }
+
+export function hasSessionOhlc(ohlc: {
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  close?: number | null;
+} | null | undefined): boolean {
+  if (!ohlc) return false;
+  return ohlc.open != null || ohlc.high != null || ohlc.low != null || ohlc.close != null;
+}

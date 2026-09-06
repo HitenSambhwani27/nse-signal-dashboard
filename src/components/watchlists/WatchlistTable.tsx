@@ -71,7 +71,8 @@ export function WatchlistTable({
       key: "oi",
       header: "OI",
       align: "right",
-      render: (r) => formatOi(r.quote?.oi),
+      render: (r) =>
+        r.quote?.missing_fields?.includes("oi") ? "—" : formatOi(r.quote?.oi),
       sortValue: (r) => r.quote?.oi ?? null,
     },
     {

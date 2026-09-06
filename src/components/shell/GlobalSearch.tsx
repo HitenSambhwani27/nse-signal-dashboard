@@ -1,31 +1,46 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { INDEX_INSTRUMENTS, displayName, symbolHref, underlyingForSymbol } from "@/lib/instruments";
+import type { WatchlistQuoteRow } from "@/api/types";
+import {
+  buildSearchUniverse,
+  destinationForHit,
+  filterSearchUniverse,
+  groupSearchHits,
+  kindLabel,
+  type SearchInstrument,
+} from "@/lib/search";
 
-export function GlobalSearch({ symbols }: { symbols: string[] }) {
+export function GlobalSearch({
+  symbols,
+  quotes = [],
+  loading = false,
+}: {
+  symbols: string[];
+  quotes?: WatchlistQuoteRow[];
+  loading?: boolean;
+}) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [debounced, setDebounced] = useState("");
+  const [active, setActive] = useState(0);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebounced(q.trim().toUpperCase()), 120);
-    return () => window.clearTimeout(t);
-  }, [q]);
+  const universe = useMemo(() => buildSearchUniverse(symbols, quotes), [symbols, quotes]);
+  const results = useMemo(() => filterSearchUniverse(universe, q), [universe, q]);
+  const groups = useMemo(() => groupSearchHits(results), [results]);
+
+  useEffect(() => setActive(0), [q, results.length]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         input.current?.focus();
         setOpen(true);
       }
-      if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -39,77 +54,89 @@ export function GlobalSearch({ symbols }: { symbols: string[] }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const results = useMemo(() => {
-    const universe = new Set<string>([
-      ...INDEX_INSTRUMENTS.map((i) => i.spotSymbol),
-      ...INDEX_INSTRUMENTS.map((i) => i.underlying),
-      ...symbols,
-    ]);
-    const list = [...universe];
-    if (!debounced) return list.slice(0, 8).map((s) => ({ symbol: s, label: displayName(s) }));
-    const hits = list
-      .filter((s) => s.toUpperCase().includes(debounced))
-      .slice(0, 12)
-      .map((s) => ({ symbol: s, label: displayName(s) }));
-    if (!hits.some((h) => h.symbol.toUpperCase() === debounced)) {
-      hits.unshift({ symbol: debounced, label: debounced });
-    }
-    return hits;
-  }, [debounced, symbols]);
-
-  function go(symbol: string, dest: "overview" | "options" | "futures" | "chart" | "activity") {
-    const und = underlyingForSymbol(symbol);
-    if (dest === "options") router.push(`/options/${encodeURIComponent(und)}`);
-    else if (dest === "futures") router.push(`/futures/${encodeURIComponent(und)}`);
-    else if (dest === "chart") router.push(symbolHref(symbol, "chart"));
-    else if (dest === "activity") router.push(symbolHref(symbol, "activity"));
-    else router.push(symbolHref(symbol));
+  function go(hit: SearchInstrument) {
+    router.push(destinationForHit(hit));
     setOpen(false);
     setQ("");
   }
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setActive((i) => Math.min(results.length - 1, i + 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => Math.max(0, i - 1));
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const hit = results[active] ?? results[0];
+      if (hit) go(hit);
+    }
+  }
+
+  let cursor = -1;
 
   return (
     <div className="search-wrap" ref={box}>
       <input
         ref={input}
-        placeholder="Search symbol  ⌘K"
+        placeholder="Search stocks, indices, futures…"
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && results[0]) go(results[0].symbol, "overview");
-        }}
-        aria-label="Global symbol search"
+        onKeyDown={onKeyDown}
+        aria-label="Search stocks, indices, futures"
+        aria-autocomplete="list"
       />
       {open ? (
-        <div className="search-results">
-          {results.map((row) => (
-            <div key={row.symbol} style={{ borderBottom: "1px solid var(--border)" }}>
-              <Link href={symbolHref(row.symbol)} onClick={() => setOpen(false)}>
-                <strong>{row.label}</strong>
-                <span className="page-sub">{row.symbol}</span>
-              </Link>
-              <div className="row" style={{ padding: "0 8px 8px" }}>
-                <button className="btn" onClick={() => go(row.symbol, "options")}>
-                  Options
-                </button>
-                <button className="btn" onClick={() => go(row.symbol, "futures")}>
-                  Futures
-                </button>
-                <button className="btn" onClick={() => go(row.symbol, "chart")}>
-                  Chart
-                </button>
-                <button className="btn" onClick={() => go(row.symbol, "activity")}>
-                  Activity
-                </button>
-              </div>
-            </div>
-          ))}
-          <div style={{ padding: 8, color: "var(--text-faint)" }}>
-            Type any backend symbol. Universe comes from watchlists plus index underlyings — not a hardcoded Nifty 100 book.
+        <div className="search-results" role="listbox">
+          {loading && !symbols.length ? (
+            <div className="search-empty">Loading instruments…</div>
+          ) : null}
+          {!loading || symbols.length ? (
+            results.length ? (
+              groups.map((group) => (
+                <div key={group.kind} className="search-group">
+                  <div className="search-group-h">{group.label}</div>
+                  {group.hits.map((hit) => {
+                    cursor += 1;
+                    const index = cursor;
+                    return (
+                      <button
+                        key={`${hit.kind}-${hit.symbol}-${hit.href}`}
+                        type="button"
+                        role="option"
+                        aria-selected={index === active}
+                        className={`search-row ${index === active ? "active" : ""}`}
+                        onMouseEnter={() => setActive(index)}
+                        onClick={() => go(hit)}
+                      >
+                        <span className="search-sym">{hit.symbol}</span>
+                        <span className="search-name">{hit.name}</span>
+                        <span className="search-kind">{kindLabel(hit.kind)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            ) : (
+              <div className="search-empty">No matching instruments</div>
+            )
+          ) : null}
+          <div className="search-hint">
+            {results[active] ? `Enter opens ${results[active].symbol}` : "Type to filter watchlist and index symbols"}
           </div>
         </div>
       ) : null}

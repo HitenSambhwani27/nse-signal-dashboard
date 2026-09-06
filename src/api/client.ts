@@ -1,7 +1,9 @@
 import { EnvelopeError, parseEnvelope } from "@/api/envelope";
+import { normalizeSymbol } from "@/lib/instruments";
 
 export const DEFAULT_BACKEND = "http://127.0.0.1:8080";
 export const REQUEST_TIMEOUT_MS = 15_000;
+const CACHE_TTL_MS = 1_500;
 
 export class ApiError extends Error {
   status: number;
@@ -28,7 +30,39 @@ export function joinUrl(path: string): string {
   return `${base}${normalised}`;
 }
 
+const inflight = new Map<string, Promise<unknown>>();
+const cache = new Map<string, { at: number; data: unknown }>();
+
+export function clearApiCache(): void {
+  inflight.clear();
+  cache.clear();
+}
+
 export async function apiGet<T extends object>(
+  path: string,
+  options?: { signal?: AbortSignal; timeoutMs?: number },
+): Promise<T> {
+  const url = joinUrl(path);
+  const cached = cache.get(url);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.data as T;
+  }
+  const existing = inflight.get(url);
+  if (existing && !options?.signal) {
+    return existing as Promise<T>;
+  }
+  const pending = apiGetUncached<T>(path, options);
+  if (!options?.signal) inflight.set(url, pending);
+  try {
+    const data = await pending;
+    cache.set(url, { at: Date.now(), data });
+    return data;
+  } finally {
+    inflight.delete(url);
+  }
+}
+
+async function apiGetUncached<T extends object>(
   path: string,
   options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<T> {
@@ -48,7 +82,19 @@ export async function apiGet<T extends object>(
       signal: controller.signal,
     });
     if (!response.ok) {
-      throw new ApiError(`Unable to load market data (${response.status})`, response.status, path);
+      let detail = `Unable to load market data (${response.status})`;
+      try {
+        const errBody: unknown = await response.clone().json();
+        if (errBody && typeof errBody === "object" && "detail" in errBody) {
+          const text = String((errBody as { detail?: unknown }).detail || "");
+          if (text.includes("ECONNREFUSED") || response.status === 502) {
+            detail = "API unreachable at FastAPI :8080";
+          }
+        }
+      } catch {
+        /* keep status message */
+      }
+      throw new ApiError(detail, response.status, path);
     }
     const payload: unknown = await response.json();
     return parseEnvelope<T>(payload);
@@ -57,16 +103,16 @@ export async function apiGet<T extends object>(
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiError("Request timed out", 408, path);
     }
-    throw new ApiError(
-      err instanceof Error ? err.message : "Unable to load market data",
-      0,
-      path,
-    );
+    const message = err instanceof Error ? err.message : "Unable to load market data";
+    if (message.includes("ECONNREFUSED") || message.includes("Failed to fetch")) {
+      throw new ApiError("API unreachable at FastAPI :8080", 0, path);
+    }
+    throw new ApiError(message, 0, path);
   } finally {
     clearTimeout(timer);
   }
 }
 
 export function encodePathSegment(value: string): string {
-  return encodeURIComponent(value);
+  return encodeURIComponent(normalizeSymbol(value));
 }

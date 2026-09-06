@@ -14,12 +14,16 @@ export function MaturityStrip({ maturity }: { maturity: MaturityMap | null }) {
     <div className="maturity-strip" title="A probability is shown only after 60 pooled live days per class.">
       <span style={{ color: "var(--accent)", letterSpacing: "0.08em" }}>MATURITY</span>
       {views.map((view) => {
-        const key = view.class_key || "class";
+        const label = view.class_key || "class";
+        const reactKey =
+          view.envelope_key ||
+          [view.class_key, view.underlying].filter(Boolean).join(":") ||
+          "class";
         const permitted = Boolean(view.probability_permitted);
         const display = view.display || "insufficient data";
         return (
-          <span key={key} style={{ color: permitted ? "var(--text-secondary)" : "var(--warning)" }}>
-            {key}: {display}
+          <span key={reactKey} style={{ color: permitted ? "var(--text-secondary)" : "var(--warning)" }}>
+            {label}: {display}
           </span>
         );
       })}

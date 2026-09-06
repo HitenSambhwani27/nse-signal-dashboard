@@ -1,6 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { apiGet } from "@/api/client";
+import { describe, expect, it, vi, afterEach } from "vitest";
+import { apiGet, clearApiCache, encodePathSegment } from "@/api/client";
 import { EnvelopeError } from "@/api/envelope";
+
+afterEach(() => {
+  clearApiCache();
+  vi.unstubAllGlobals();
+});
 
 describe("api client", () => {
   it("parses a maturity envelope", async () => {
@@ -19,7 +24,6 @@ describe("api client", () => {
     const payload = await apiGet<{ found: boolean; quote: null }>("/api/v1/quotes/RELIANCE");
     expect(payload.found).toBe(false);
     expect(payload.quote).toBeNull();
-    vi.unstubAllGlobals();
   });
 
   it("rejects payloads without maturity", async () => {
@@ -31,6 +35,11 @@ describe("api client", () => {
       }),
     );
     await expect(apiGet("/api/v1/quotes/X")).rejects.toBeInstanceOf(EnvelopeError);
-    vi.unstubAllGlobals();
+  });
+
+  it("encodes spaces once", () => {
+    expect(encodePathSegment("NIFTY 50")).toBe("NIFTY%2050");
+    expect(encodePathSegment("NIFTY%2050")).toBe("NIFTY%2050");
+    expect(encodePathSegment("NIFTY BANK")).toBe("NIFTY%20BANK");
   });
 });

@@ -280,7 +280,11 @@ function OptionsSnap({
             <div className="metric">
               <div className="k">Chain</div>
               <div className="v">
-                <ChainStatusBadge status={chain.chain_status} truncated={chain.truncated} />
+                <ChainStatusBadge
+                  status={chain.chain_status}
+                  truncated={chain.truncated}
+                  quoteStatus={chain.quote_status}
+                />
               </div>
             </div>
           </div>

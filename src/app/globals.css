@@ -207,25 +207,64 @@ main {
   background: var(--bg-overlay);
   border: 1px solid var(--border-strong);
   z-index: 40;
-  max-height: 320px;
+  max-height: 360px;
   overflow: auto;
+  min-width: 360px;
 }
 
-.search-results button,
-.search-results a {
-  display: flex;
-  justify-content: space-between;
+.search-group-h {
+  padding: 6px 10px 2px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.search-row {
+  display: grid !important;
+  grid-template-columns: 110px 1fr auto;
+  gap: 8px;
+  align-items: center;
   width: 100%;
   text-align: left;
   background: none;
   border: 0;
-  padding: 8px 10px;
+  padding: 5px 10px;
   color: var(--text);
+  height: 26px;
 }
 
-.search-results button:hover,
-.search-results a:hover {
+.search-row.active,
+.search-row:hover {
   background: var(--bg-hover);
+}
+
+.search-sym {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.search-name {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-kind {
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.search-empty,
+.search-hint {
+  padding: 8px 10px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.search-hint {
+  border-top: 1px solid var(--border);
 }
 
 .ticker {

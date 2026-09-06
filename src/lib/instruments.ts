@@ -44,18 +44,24 @@ export function displayName(symbol: string): string {
 }
 
 export function symbolHref(symbol: string, tab?: string): string {
-  const enc = encodeURIComponent(symbol);
+  const enc = encodeURIComponent(normalizeSymbol(symbol) || symbol);
   return tab ? `/symbol/${enc}/${tab}` : `/symbol/${enc}`;
 }
 
 export function decodeParam(value: string | string[] | undefined): string {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (!raw) return "";
+  return normalizeSymbol(Array.isArray(value) ? value[0] : value);
+}
+
+/** Decode once, collapse spaces, preserve NSE symbol spelling. */
+export function normalizeSymbol(value: string | null | undefined): string {
+  if (!value) return "";
+  let text = value.trim();
   try {
-    return decodeURIComponent(raw);
+    if (/%[0-9A-Fa-f]{2}/.test(text)) text = decodeURIComponent(text);
   } catch {
-    return raw;
+    /* keep raw */
   }
+  return text.replace(/\+/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export const SYMBOL_TABS = [

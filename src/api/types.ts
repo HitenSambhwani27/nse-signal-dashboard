@@ -10,6 +10,7 @@ export type JsonValue =
 
 export interface MaturityView {
   class_key?: string | null;
+  envelope_key?: string | null;
   underlying?: string | null;
   tier?: string | null;
   pooled_live_days?: number | null;
@@ -106,6 +107,15 @@ export interface OptionSide {
   tick_size?: number | null;
   moneyness?: string | null;
   iv?: number | null;
+  iv_pct?: number | null;
+  iv_source?: string | null;
+  iv_kind?: string | null;
+  iv_status?: string | null;
+  iv_reason?: string | null;
+  iv_model?: string | null;
+  iv_rate?: number | null;
+  iv_dividend_yield?: number | null;
+  iv_exercise_style?: string | null;
 }
 
 export interface OptionStrikeRow {
@@ -160,6 +170,9 @@ export interface OptionChain {
   eligible_contract_count: number | null;
   selected_contract_count: number | null;
   missing_contract_count: number | null;
+  quoted_contract_count?: number | null;
+  quote_coverage?: number | null;
+  quote_status?: ChainStatus | null;
   truncated: boolean | null;
   partial: boolean | null;
   observation_count?: number | null;
@@ -212,6 +225,9 @@ export interface OptionOiBlock {
   eligible_contract_count: number | null;
   selected_contract_count: number | null;
   missing_contract_count: number | null;
+  quoted_contract_count?: number | null;
+  quote_coverage?: number | null;
+  quote_status?: ChainStatus | null;
   truncated: boolean | null;
   multi_strike: MultiStrikeRow[] | null;
 }
@@ -406,6 +422,12 @@ export interface ChartPoint {
 
 export interface ChartSeries {
   points: ChartPoint[] | null;
+  candles?: ChartPoint[] | null;
+  candles_status?: string | null;
+  candles_reason?: string | null;
+  candles_source?: string | null;
+  interval?: string | null;
+  source?: string | null;
   observation_count: number | null;
   returned_points: number | null;
   downsampled: boolean | null;
@@ -447,6 +469,9 @@ export interface CrossMarketOptionsSummary {
   eligible_contract_count: number | null;
   selected_contract_count: number | null;
   missing_contract_count: number | null;
+  quoted_contract_count?: number | null;
+  quote_coverage?: number | null;
+  quote_status?: ChainStatus | null;
 }
 
 export interface CrossMarketPayload {

@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { quotesPath } from "@/api/quotes";
 import { healthPath } from "@/api/pipeline";
-import { watchlistsPath } from "@/api/watchlists";
-import type { HealthResponse, QuoteResponse, WatchlistsResponse } from "@/api/types";
+import { watchlistQuotesPath, watchlistsPath } from "@/api/watchlists";
+import type { HealthResponse, QuoteResponse, WatchlistQuotesResponse, WatchlistsResponse } from "@/api/types";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { MarketTicker } from "@/components/shell/MarketTicker";
 import { MaturityStrip } from "@/components/shell/MaturityStrip";
@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const bank = useApiQuery<QuoteResponse>(quotesPath(INDEX_INSTRUMENTS[1].spotSymbol), 5000);
   const health = useApiQuery<HealthResponse>(healthPath(), 8000);
   const lists = useApiQuery<WatchlistsResponse>(watchlistsPath(), 30_000);
+  const listQuotes = useApiQuery<WatchlistQuotesResponse>(watchlistQuotesPath(), 8_000);
 
   const symbols = useMemo(() => {
     const out: string[] = [];
@@ -57,7 +58,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="brand-name">NSE Terminal</span>
           <span className="brand-sub">Client</span>
         </Link>
-        <GlobalSearch symbols={symbols} />
+        <GlobalSearch
+          symbols={symbols}
+          quotes={listQuotes.data?.quotes ?? []}
+          loading={lists.status === "loading" && !lists.data}
+        />
         <MarketTicker
           nifty={nifty.data?.quote ?? null}
           banknifty={bank.data?.quote ?? null}

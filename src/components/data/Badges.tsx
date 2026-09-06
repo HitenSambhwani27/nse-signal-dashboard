@@ -44,9 +44,11 @@ export function StatusBadge({
 export function ChainStatusBadge({
   status,
   truncated,
+  quoteStatus,
 }: {
   status?: string | null;
   truncated?: boolean | null;
+  quoteStatus?: string | null;
 }) {
   if (truncated || status === "truncated") {
     return <span className="badge warning">Partial chain — subscription limit</span>;
@@ -56,6 +58,12 @@ export function ChainStatusBadge({
   }
   if (status === "empty") {
     return <span className="badge muted">Empty chain</span>;
+  }
+  if (status === "complete" && quoteStatus === "empty") {
+    return <span className="badge muted">Listed — no live quotes</span>;
+  }
+  if (status === "complete" && quoteStatus === "partial") {
+    return <span className="badge warning">Listed — partial quotes</span>;
   }
   if (status === "complete") {
     return <span className="badge fresh">Chain complete</span>;

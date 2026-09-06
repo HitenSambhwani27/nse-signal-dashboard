@@ -106,7 +106,11 @@ export default function OptionsTerminalPage() {
                 ),
               )}
             </select>
-            <ChainStatusBadge status={chain.chain_status} truncated={chain.truncated} />
+            <ChainStatusBadge
+              status={chain.chain_status}
+              truncated={chain.truncated}
+              quoteStatus={chain.quote_status}
+            />
             {chain.truncated ? (
               <span className="warn-line">Partial chain — subscription limit</span>
             ) : chain.chain_status === "partial" ? (

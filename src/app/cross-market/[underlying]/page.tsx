@@ -69,6 +69,7 @@ export default function CrossMarketPage() {
               <div className="v">
                 <ChainStatusBadge
                   status={payload.options_summary?.chain_status}
+                  quoteStatus={payload.options_summary?.quote_status}
                 />
               </div>
             </div>

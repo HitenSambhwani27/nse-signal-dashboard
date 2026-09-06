@@ -27,8 +27,7 @@ export function hasOhlcFields(point: ChartPoint): boolean {
  * Extract candlesticks only when the backend supplies OHLC on each point.
  * Never synthesise candles from last_price observations.
  */
-export function extractCandles(series: ChartSeries | null | undefined): Candle[] | null {
-  const points = series?.points;
+function candlesFromPoints(points: ChartPoint[] | null | undefined): Candle[] | null {
   if (!points || points.length === 0) return null;
   if (!points.every(hasOhlcFields)) return null;
   const candles: Candle[] = [];
@@ -48,6 +47,16 @@ export function extractCandles(series: ChartSeries | null | undefined): Candle[]
   return candles.length ? candles : null;
 }
 
+/**
+ * Prefer a dedicated backend candles array. Fall back to points only when
+ * every point already carries real OHLC. Never synthesise from last_price.
+ */
+export function extractCandles(series: ChartSeries | null | undefined): Candle[] | null {
+  const dedicated = candlesFromPoints(series?.candles);
+  if (dedicated) return dedicated;
+  return candlesFromPoints(series?.points);
+}
+
 export function filterPointsByTimeframe(
   points: ChartPoint[] | null | undefined,
   timeframe: ChartTimeframe,
@@ -62,6 +71,68 @@ export function filterPointsByTimeframe(
     const t = Date.parse(p.timestamp);
     return !Number.isNaN(t) && t >= cutoff;
   });
+}
+
+/** Latest IST calendar date present in the series. Does not invent rows. */
+export function latestSessionDate(points: ChartPoint[] | null | undefined): string | null {
+  let latest: string | null = null;
+  for (const point of points ?? []) {
+    if (!point.timestamp) continue;
+    const t = Date.parse(point.timestamp);
+    if (Number.isNaN(t)) continue;
+    const key = new Date(t + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (!latest || key > latest) latest = key;
+  }
+  return latest;
+}
+
+export function pointsOnSessionDate(
+  points: ChartPoint[] | null | undefined,
+  sessionDate: string | null,
+): ChartPoint[] {
+  if (!sessionDate) return [];
+  return (points ?? []).filter((p) => {
+    if (!p.timestamp) return false;
+    const t = Date.parse(p.timestamp);
+    if (Number.isNaN(t)) return false;
+    return new Date(t + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10) === sessionDate;
+  });
+}
+
+export function resolveDisplayedPoints(
+  points: ChartPoint[] | null | undefined,
+  timeframe: ChartTimeframe,
+  now = Date.now(),
+): {
+  points: ChartPoint[];
+  mode: "selected" | "last_session" | "empty";
+  sessionDate: string | null;
+} {
+  const selected = filterPointsByTimeframe(points, timeframe, now);
+  if (selected.length) {
+    return { points: selected, mode: "selected", sessionDate: latestSessionDate(selected) };
+  }
+  const sessionDate = latestSessionDate(points);
+  const sessionPoints = pointsOnSessionDate(points, sessionDate);
+  if (sessionPoints.length) {
+    return { points: sessionPoints, mode: "last_session", sessionDate };
+  }
+  return { points: [], mode: "empty", sessionDate: null };
+}
+
+export function lastObservationIso(points: ChartPoint[] | null | undefined): string | null {
+  let last: string | null = null;
+  let lastMs = -Infinity;
+  for (const point of points ?? []) {
+    if (!point.timestamp) continue;
+    const t = Date.parse(point.timestamp);
+    if (Number.isNaN(t)) continue;
+    if (t >= lastMs) {
+      lastMs = t;
+      last = point.timestamp;
+    }
+  }
+  return last;
 }
 
 export const CANDLE_BACKEND_FIELDS = [
