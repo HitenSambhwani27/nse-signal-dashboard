@@ -19,8 +19,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NSE Terminal",
-  description: "Professional client market terminal for the NSE signal pipeline.",
+  title: "Pulse Terminal — NSE Market Intelligence",
+  description: "Professional NSE market intelligence terminal.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

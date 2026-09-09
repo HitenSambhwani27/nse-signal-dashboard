@@ -16,6 +16,14 @@ import { INDEX_INSTRUMENTS, NAV_ITEMS } from "@/lib/instruments";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  if (pathname === "/") {
+    return <>{children}</>;
+  }
+  return <LegacyAppShell>{children}</LegacyAppShell>;
+}
+
+function LegacyAppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const nifty = useApiQuery<QuoteResponse>(quotesPath(INDEX_INSTRUMENTS[0].spotSymbol), 5000);
   const bank = useApiQuery<QuoteResponse>(quotesPath(INDEX_INSTRUMENTS[1].spotSymbol), 5000);
