@@ -1,19 +1,9 @@
 /**
  * Phase 4 subscription control proxy. REST only — not a market-data stream.
  */
-export const dynamic = "force-dynamic";
+import { upstreamOrigin } from "@/api/upstream";
 
-function upstreamOrigin(): string {
-  const raw =
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NSE_API_URL ||
-    "http://127.0.0.1:8080";
-  if (["mock", "fixture", "fixtures", ""].includes(raw.trim().toLowerCase())) {
-    return "http://127.0.0.1:8080";
-  }
-  return raw.replace(/\/$/, "");
-}
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const target = `${upstreamOrigin()}/api/v1/subscriptions`;

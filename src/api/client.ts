@@ -1,7 +1,6 @@
 import { EnvelopeError, parseEnvelope } from "@/api/envelope";
 import { normalizeSymbol } from "@/lib/instruments";
 
-export const DEFAULT_BACKEND = "http://127.0.0.1:8080";
 export const REQUEST_TIMEOUT_MS = 15_000;
 const CACHE_TTL_MS = 1_500;
 
@@ -88,7 +87,7 @@ async function apiGetUncached<T extends object>(
         if (errBody && typeof errBody === "object" && "detail" in errBody) {
           const text = String((errBody as { detail?: unknown }).detail || "");
           if (text.includes("ECONNREFUSED") || response.status === 502) {
-            detail = "API unreachable at FastAPI :8080";
+            detail = "API unreachable";
           }
         }
       } catch {
@@ -105,7 +104,7 @@ async function apiGetUncached<T extends object>(
     }
     const message = err instanceof Error ? err.message : "Unable to load market data";
     if (message.includes("ECONNREFUSED") || message.includes("Failed to fetch")) {
-      throw new ApiError("API unreachable at FastAPI :8080", 0, path);
+      throw new ApiError("API unreachable", 0, path);
     }
     throw new ApiError(message, 0, path);
   } finally {

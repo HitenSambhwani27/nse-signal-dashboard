@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
+import { upstreamOrigin } from "@/api/upstream";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -30,6 +31,8 @@ describe("subscriptions proxy", () => {
     expect(response.status).toBe(200);
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect(init.method).toBe("POST");
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/subscriptions");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      `${upstreamOrigin()}/api/v1/subscriptions`,
+    );
   });
 });

@@ -1,75 +1,94 @@
 "use client";
 
+import {
+  DASH,
+  formatNumber,
+  formatPct,
+  formatSigned,
+  formatTime,
+  formatVolume,
+} from "@/lib/format";
+import { useInstrumentQuote, useLiveStatus, useMarketSession } from "@/market/hooks";
 import { Badge, PanelHead } from "@/components/terminal/primitives";
 import { useTerminal } from "@/terminal/context";
+import type { LiveStatusKind } from "@/market/hooks";
 
+const STATUS_TONE: Record<LiveStatusKind, "up" | "down" | "warn" | "neutral"> = {
+  live: "up",
+  partial: "warn",
+  stale: "warn",
+  reconnecting: "warn",
+  connecting: "neutral",
+  disconnected: "down",
+  idle: "neutral",
+};
+
+/**
+ * Phase 6B scope: this panel carries live market context for the selected
+ * instrument. Bias, probability and model maturity are Phase 6C and are shown
+ * as explicitly unavailable rather than approximated here.
+ */
 export function TradeIntelligencePanel() {
-  const { intelligence, selectedInstrument } = useTerminal();
-  const maturityPct = Math.min(
-    100,
-    (intelligence.pooledLiveDays / intelligence.thresholdDays) * 100,
-  );
+  const { selectedInstrument, selectedToken } = useTerminal();
+  const quote = useInstrumentQuote(selectedToken);
+  const session = useMarketSession();
+  const status = useLiveStatus();
+
   return (
     <aside className="pulse-intel" aria-label="Trade intelligence">
       <PanelHead
         title="Trade intelligence"
-        meta={<span className="pulse-meta">Context engine · v1.8</span>}
+        meta={<span className="pulse-meta">Live context</span>}
       />
       <div className="pulse-intel-body">
-        <div className="pulse-intel-kicker">CURRENT BIAS · {selectedInstrument.shortName}</div>
+        <div className="pulse-intel-kicker">
+          MARKET CONTEXT · {selectedInstrument.shortName}
+        </div>
         <div className="pulse-bias-row">
-          <div className="pulse-bias up">
-            {intelligence.bias}
-            <span aria-hidden>↗</span>
-          </div>
-          <Badge tone="warn">{intelligence.confidence} confidence</Badge>
+          <div className="pulse-px num">{formatNumber(quote?.ltp)}</div>
+          <Badge tone={STATUS_TONE[status.kind]}>{status.label}</Badge>
         </div>
-        <div className="pulse-maturity">
-          <div className="pulse-maturity-h">
-            Model maturity
-            <span>
-              {intelligence.pooledLiveDays} / {intelligence.thresholdDays} pooled live days
-            </span>
-          </div>
-          <div className="pulse-meter" aria-hidden>
-            <span style={{ width: `${maturityPct}%` }} />
-          </div>
-          <div className="pulse-unavailable">
-            Probability
-            <strong>Unavailable</strong>
-            <span>{intelligence.probabilityReason}</span>
-          </div>
-        </div>
-        <IntelBlock tone="up" section={intelligence.entry} />
-        <IntelBlock tone="down" section={intelligence.exit} />
-        <IntelBlock tone="info" section={intelligence.evidence} />
-        <IntelBlock tone="warn" section={intelligence.contradictions} />
+
         <div className="pulse-levels">
-          <div className="pulse-intel-kicker">KEY LEVELS</div>
-          {intelligence.keyLevels.map((level) => (
-            <div key={level.label} className="pulse-level-row">
-              <span>{level.label}</span>
-              <span className="num">{level.value}</span>
-            </div>
-          ))}
+          <ContextRow
+            label="Change"
+            value={
+              quote?.change == null
+                ? DASH
+                : `${formatSigned(quote.change)} (${formatPct(quote.changePct)})`
+            }
+          />
+          <ContextRow label="Volume" value={formatVolume(quote?.volume)} />
+          <ContextRow label="Open interest" value={formatVolume(quote?.oi)} />
+          <ContextRow label="Bid / Ask" value={
+            quote?.bid == null && quote?.ask == null
+              ? DASH
+              : `${formatNumber(quote?.bid)} / ${formatNumber(quote?.ask)}`
+          } />
+          <ContextRow label="Exchange time" value={formatTime(quote?.timestamp)} />
+          <ContextRow label="Source" value={quote === null ? DASH : quote.origin} />
+          <ContextRow label="Session" value={session?.marketState ?? DASH} />
+          <ContextRow label="Coverage" value={session?.coverage ?? DASH} />
         </div>
-        <p className="pulse-fixture-note">Phase 6A presentation fixture · not live model output</p>
+
+        <div className="pulse-unavailable">
+          Directional bias
+          <strong>Unavailable</strong>
+          <span>
+            Bias, probability and model maturity require the Phase 6C inference layer, which is
+            not implemented. No estimate is shown in its place.
+          </span>
+        </div>
       </div>
     </aside>
   );
 }
 
-function IntelBlock({
-  tone,
-  section,
-}: {
-  tone: "up" | "down" | "info" | "warn";
-  section: { title: string; body: string };
-}) {
+function ContextRow({ label, value }: { label: string; value: string }) {
   return (
-    <section className={`pulse-intel-block ${tone}`}>
-      <h3>{section.title}</h3>
-      <p>{section.body}</p>
-    </section>
+    <div className="pulse-level-row">
+      <span>{label}</span>
+      <span className="num">{value}</span>
+    </div>
   );
 }

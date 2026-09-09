@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { upstreamOrigin } from "@/api/upstream";
 
 export const dynamic = "force-dynamic";
-
-function upstreamOrigin(): string {
-  const raw =
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NSE_API_URL ||
-    "http://127.0.0.1:8080";
-  if (["mock", "fixture", "fixtures", ""].includes(raw.trim().toLowerCase())) {
-    return "http://127.0.0.1:8080";
-  }
-  return raw.replace(/\/$/, "");
-}
 
 export async function GET(
   request: NextRequest,

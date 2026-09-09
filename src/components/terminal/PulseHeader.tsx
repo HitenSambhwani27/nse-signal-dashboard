@@ -1,11 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PulseSearch } from "@/components/terminal/PulseSearch";
 import { IconButton } from "@/components/terminal/primitives";
+import { useLiveStatus, useMarketSession } from "@/market/hooks";
 import { useTerminal } from "@/terminal/context";
+import type { MarketState } from "@/worker/protocol";
+
+const MARKET_STATE_LABELS: Record<MarketState, string> = {
+  pre_open: "PRE-OPEN",
+  open: "MARKET OPEN",
+  post_close: "POST-CLOSE",
+  closed: "MARKET CLOSED",
+  weekend: "WEEKEND",
+  holiday: "HOLIDAY",
+  unknown: "SESSION UNKNOWN",
+};
 
 export function PulseHeader() {
   const { toggleNav, toggleWatch, toggleIntel } = useTerminal();
+  const status = useLiveStatus();
+  const session = useMarketSession();
   const [clock, setClock] = useState("");
   useEffect(() => {
     const tick = () => {
@@ -39,28 +54,37 @@ export function PulseHeader() {
           <span className="pulse-brand-sub">NSE MARKET INTELLIGENCE</span>
         </span>
       </div>
-      <label className="pulse-search">
-        <span className="visually-hidden">Search instruments, symbols or contracts</span>
-        <input
-          type="search"
-          placeholder="Search instruments, symbols or contracts"
-          readOnly
-          aria-label="Search instruments, symbols or contracts"
-        />
-        <kbd>⌘K</kbd>
-      </label>
+      <PulseSearch />
       <div className="pulse-status">
-        <span className="pulse-live">
+        <span
+          className="pulse-live"
+          title={session?.sessionDate ?? undefined}
+          data-testid="market-status"
+        >
           <span className="pulse-dot" />
-          MARKET OPEN
+          {session ? MARKET_STATE_LABELS[session.marketState] : "AWAITING SESSION"}
         </span>
         <span className="pulse-chip">NSE</span>
         <span
-          className="pulse-chip live"
-          title="Phase 6A visual fixture. Not a live transport measurement."
+          className={`pulse-chip stream ${status.kind}`}
+          title={status.detail ?? "SSE transport status — not market state"}
+          data-testid="stream-status"
         >
-          Live 18ms
+          <span className="pulse-dot" />
+          {status.label}
         </span>
+        <span
+          className="pulse-chip muted"
+          title={session?.asOf ?? "Backend data_status"}
+          data-testid="data-status"
+        >
+          {dataStatusLabel(session?.dataStatus)}
+        </span>
+        {status.lagMs === null ? null : (
+          <span className="pulse-chip" title="Server-reported ingest lag from the stream heartbeat">
+            Lag {Math.round(status.lagMs)}ms
+          </span>
+        )}
         <time className="pulse-clock" dateTime={clock}>
           {clock || "--:--:--"}
         </time>
@@ -86,6 +110,11 @@ export function PulseHeader() {
       </div>
     </header>
   );
+}
+
+function dataStatusLabel(status: string | null | undefined): string {
+  if (!status) return "DATA UNAVAILABLE";
+  return status.replace(/_/g, " ").toUpperCase();
 }
 
 function BellIcon() {

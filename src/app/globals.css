@@ -975,12 +975,59 @@ table.fin tbody tr.clickable {
   outline: none;
   height: 28px;
 }
+.pulse-search-label {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
 .pulse-search kbd {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-faint);
   border: 1px solid var(--pulse-border);
   padding: 1px 5px;
+}
+.pulse-search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -1px;
+  right: -1px;
+  z-index: 40;
+  background: #0c0e13;
+  border: 1px solid var(--pulse-border);
+  max-height: 280px;
+  overflow: auto;
+}
+.pulse-search-empty {
+  padding: 10px 12px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+.pulse-search-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px;
+  background: none;
+  border: 0;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+.pulse-search-row.active,
+.pulse-search-row:hover {
+  background: #141820;
+  color: var(--text-primary);
+}
+.pulse-search-sym {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.pulse-search-meta {
+  font-size: 10px;
+  color: var(--text-faint);
 }
 .pulse-live {
   display: inline-flex;
@@ -1011,6 +1058,36 @@ table.fin tbody tr.clickable {
 }
 .pulse-chip.live {
   color: var(--pulse-up);
+}
+/* Transport state badge. Colour tracks the real stream status, never a fixture. */
+.pulse-chip.stream {
+  gap: 5px;
+  color: var(--text-faint);
+}
+.pulse-chip.stream .pulse-dot {
+  background: currentColor;
+}
+.pulse-chip.stream.live {
+  color: var(--pulse-up);
+  border-color: color-mix(in srgb, var(--pulse-up) 40%, var(--pulse-border));
+}
+.pulse-chip.stream.partial,
+.pulse-chip.stream.stale,
+.pulse-chip.stream.reconnecting {
+  color: var(--pulse-warn);
+  border-color: color-mix(in srgb, var(--pulse-warn) 40%, var(--pulse-border));
+}
+.pulse-chip.stream.reconnecting .pulse-dot {
+  animation: pulse-blink 1s steps(2, start) infinite;
+}
+.pulse-chip.stream.disconnected {
+  color: var(--pulse-down);
+  border-color: color-mix(in srgb, var(--pulse-down) 40%, var(--pulse-border));
+}
+@keyframes pulse-blink {
+  to {
+    opacity: 0.25;
+  }
 }
 .pulse-clock {
   font-family: var(--font-mono);
@@ -1443,6 +1520,24 @@ table.fin tbody tr.clickable {
   width: 100%;
   height: 100%;
   min-height: 280px;
+}
+.pulse-chart-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  min-height: 280px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.pulse-chart-unavailable strong {
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
 }
 .pulse-ohlc {
   position: absolute;

@@ -45,6 +45,11 @@ export interface Quote {
   last_price: number | null;
   change: number | null;
   change_pct: number | null;
+  /** Canonical day-change from `resolve_reference`. Preferred over `change`. */
+  change_absolute?: number | null;
+  change_percent?: number | null;
+  reference_price?: number | null;
+  reference_type?: string | null;
   volume: number | null;
   volume_delta: number | null;
   oi: number | null;

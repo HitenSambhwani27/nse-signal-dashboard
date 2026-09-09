@@ -3,7 +3,8 @@
 Read-only professional market terminal for the NSE signal pipeline.
 
 This repository must **not** import `nse_pipeline`, open the pipeline SQLite file,
-talk to Kite, or invent market data. The FastAPI service on `:8080` is the source of truth.
+talk to Kite, or invent market data. The FastAPI service on the VM (`127.0.0.1:8080`)
+is the source of truth. The dashboard never talks to that port directly.
 
 ## Run the terminal
 
@@ -16,14 +17,26 @@ npm run dev
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-The Next.js rewrite proxy forwards `/api/v1/*` to `API_BASE_URL` (default `http://127.0.0.1:8080`).
-Leave `NEXT_PUBLIC_API_BASE_URL` empty so the browser stays same-origin and avoids CORS.
+The Next.js `/api/v1/*` proxies forward to `API_BASE_URL`.
+Application default when unset: `http://127.0.0.1:8080` (local FastAPI, no tunnel).
+Leave `NEXT_PUBLIC_API_BASE_URL` empty so the browser and SharedWorker stay
+same-origin and avoid CORS.
 
-Live API through an SSH tunnel:
+**Local FastAPI (this machine, no tunnel):**
 
 ```powershell
-ssh -L 8080:127.0.0.1:8080 nse@<vm-host>
-$env:API_BASE_URL = "http://127.0.0.1:8080"
+# .env / .env.local:
+# API_BASE_URL=http://127.0.0.1:8080
+npm run dev
+```
+
+**VM API through an SSH tunnel** (local `18080` → VM `8080`). The dashboard does
+not create the tunnel; start it separately. Do not change the remote VM port.
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\id_ed25519_do_nse" -L 18080:127.0.0.1:8080 nse@<vm-host>
+# .env / .env.local:
+# API_BASE_URL=http://127.0.0.1:18080
 npm run dev
 ```
 

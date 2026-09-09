@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * Phase 6A selection state, preserved as-is.
+ *
+ * Market data deliberately does NOT live here. A context value change
+ * re-renders every consumer, which is exactly what a 1 Hz market feed must not
+ * do — panels read live state through `@/market/hooks` instead (§11, §12).
+ */
+
 import {
   createContext,
   useCallback,
@@ -8,21 +16,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useSymbolTokens } from "@/market/hooks";
 import {
-  PHASE6A_DEFAULT_INSTRUMENT,
-  PHASE6A_ACTIVITY,
-  PHASE6A_MARKETWATCH,
-  phase6aCoreSnapshot,
-  phase6aFutures,
-  phase6aIntelligence,
-  phase6aOptions,
-} from "@/fixtures/phase6a";
+  DEFAULT_INSTRUMENT,
+  TERMINAL_UNIVERSE,
+  UNIVERSE_SYMBOLS,
+} from "@/terminal/universe";
 import type {
-  ActivitySnapshot,
-  CoreSnapshot,
-  FuturesSnapshot,
-  IntelligenceSnapshot,
-  OptionsSnapshot,
+  ActivityFilter,
   StrikeRangeId,
   TerminalInstrument,
   TimeframeId,
@@ -30,30 +31,30 @@ import type {
 } from "@/terminal/types";
 
 export interface TerminalContextValue {
+  instruments: TerminalInstrument[];
   selectedInstrument: TerminalInstrument;
+  /** Null until the worker resolves the symbol against the pipeline. */
+  selectedToken: number | null;
+  tokensBySymbol: Record<string, number>;
   selectedWorkspace: WorkspaceId;
   selectedTimeframe: TimeframeId;
-  selectedExpiry: string;
+  /** Null means "let the backend choose the nearest expiry". */
+  selectedExpiry: string | null;
   selectedStrikeRange: StrikeRangeId;
   favorite: boolean;
   liveScan: boolean;
-  activityFilter: "all" | "positive" | "negative" | "neutral";
+  activityFilter: ActivityFilter;
   collapsedNav: boolean;
   collapsedWatch: boolean;
   collapsedIntel: boolean;
-  core: CoreSnapshot;
-  options: OptionsSnapshot;
-  futures: FuturesSnapshot;
-  activity: ActivitySnapshot;
-  intelligence: IntelligenceSnapshot;
   setWorkspace: (id: WorkspaceId) => void;
   selectInstrument: (instrument: TerminalInstrument) => void;
   setTimeframe: (tf: TimeframeId) => void;
-  setExpiry: (expiry: string) => void;
+  setExpiry: (expiry: string | null) => void;
   setStrikeRange: (range: StrikeRangeId) => void;
   toggleFavorite: () => void;
   setLiveScan: (value: boolean) => void;
-  setActivityFilter: (value: "all" | "positive" | "negative" | "neutral") => void;
+  setActivityFilter: (value: ActivityFilter) => void;
   toggleNav: () => void;
   toggleWatch: () => void;
   toggleIntel: () => void;
@@ -62,50 +63,36 @@ export interface TerminalContextValue {
 const TerminalContext = createContext<TerminalContextValue | null>(null);
 
 export function TerminalProvider({ children }: { children: ReactNode }) {
-  const [selectedInstrument, setSelectedInstrument] = useState<TerminalInstrument>(
-    PHASE6A_DEFAULT_INSTRUMENT,
-  );
+  const [selectedInstrument, setSelectedInstrument] =
+    useState<TerminalInstrument>(DEFAULT_INSTRUMENT);
   const [selectedWorkspace, setSelectedWorkspace] = useState<WorkspaceId>("core");
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeId>("5m");
+  const [selectedExpiry, setSelectedExpiry] = useState<string | null>(null);
   const [selectedStrikeRange, setSelectedStrikeRange] = useState<StrikeRangeId>(10);
   const [favorite, setFavorite] = useState(false);
   const [liveScan, setLiveScan] = useState(true);
-  const [activityFilter, setActivityFilter] = useState<"all" | "positive" | "negative" | "neutral">(
-    "all",
-  );
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const [collapsedNav, setCollapsedNav] = useState(false);
   const [collapsedWatch, setCollapsedWatch] = useState(false);
   const [collapsedIntel, setCollapsedIntel] = useState(false);
 
-  const core = useMemo(() => phase6aCoreSnapshot(selectedInstrument), [selectedInstrument]);
-  const optionsFull = useMemo(() => phase6aOptions(core.ltp), [core.ltp]);
-  const [selectedExpiry, setSelectedExpiry] = useState(optionsFull.selectedExpiry);
-  const options = useMemo(() => {
-    const atm = optionsFull.rows.find((r) => r.atm)?.strike;
-    const rows = optionsFull.rows.filter((row) => {
-      if (atm == null) return true;
-      return Math.abs(row.strike - atm) <= selectedStrikeRange * 50;
-    });
-    return { ...optionsFull, selectedExpiry, rows };
-  }, [optionsFull, selectedExpiry, selectedStrikeRange]);
-  const futures = useMemo(
-    () => phase6aFutures(selectedInstrument.symbol, core.ltp),
-    [selectedInstrument.symbol, core.ltp],
-  );
-  const activity = PHASE6A_ACTIVITY;
-  const intelligence = useMemo(
-    () => phase6aIntelligence(selectedInstrument),
-    [selectedInstrument],
-  );
+  const tokensBySymbol = useSymbolTokens(UNIVERSE_SYMBOLS);
+  const selectedToken = tokensBySymbol[selectedInstrument.symbol] ?? null;
 
   const selectInstrument = useCallback((instrument: TerminalInstrument) => {
     setSelectedInstrument(instrument);
     setFavorite(false);
+    // Expiries are per-underlying; keeping the old one would query a contract
+    // that does not exist for the new instrument.
+    setSelectedExpiry(null);
   }, []);
 
   const value = useMemo<TerminalContextValue>(
     () => ({
+      instruments: TERMINAL_UNIVERSE,
       selectedInstrument,
+      selectedToken,
+      tokensBySymbol,
       selectedWorkspace,
       selectedTimeframe,
       selectedExpiry,
@@ -116,11 +103,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       collapsedNav,
       collapsedWatch,
       collapsedIntel,
-      core,
-      options,
-      futures,
-      activity,
-      intelligence,
       setWorkspace: setSelectedWorkspace,
       selectInstrument,
       setTimeframe: setSelectedTimeframe,
@@ -135,6 +117,8 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     }),
     [
       selectedInstrument,
+      selectedToken,
+      tokensBySymbol,
       selectedWorkspace,
       selectedTimeframe,
       selectedExpiry,
@@ -145,11 +129,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       collapsedNav,
       collapsedWatch,
       collapsedIntel,
-      core,
-      options,
-      futures,
-      activity,
-      intelligence,
       selectInstrument,
     ],
   );
@@ -161,8 +140,4 @@ export function useTerminal(): TerminalContextValue {
   const ctx = useContext(TerminalContext);
   if (!ctx) throw new Error("useTerminal must be used within TerminalProvider");
   return ctx;
-}
-
-export function instrumentFromWatchlist(symbol: string): TerminalInstrument | undefined {
-  return PHASE6A_MARKETWATCH.find((row) => row.instrument.symbol === symbol)?.instrument;
 }

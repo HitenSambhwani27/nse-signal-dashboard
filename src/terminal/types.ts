@@ -19,7 +19,8 @@ export type InstrumentKind = "INDEX" | "EQ" | "FUT" | "OPT";
 
 export type SignedTone = "up" | "down" | "neutral";
 
-export type TimeframeId = "1m" | "5m" | "15m" | "1h" | "1D";
+/** Matches `nse_pipeline.market.ohlc.CHART_INTERVALS`; "1h" is not an accepted interval. */
+export type TimeframeId = "1m" | "5m" | "15m" | "60m" | "1D";
 
 export type StrikeRangeId = 5 | 10 | 15;
 
@@ -32,16 +33,21 @@ export type BuildupLabel =
 
 export type ActivityTone = "positive" | "negative" | "neutral";
 
+export type ActivityFilter = "all" | ActivityTone;
+
 export type IntelligenceBias = "Constructive" | "Cautious" | "Neutral";
 
 export type IntelligenceConfidence = "Low" | "Moderate" | "High";
 
+/**
+ * Identity only. The instrument token is resolved at runtime by the worker, so
+ * it is deliberately absent here.
+ */
 export interface TerminalInstrument {
   symbol: string;
   shortName: string;
   exchange: "NSE";
   kind: InstrumentKind;
-  token: number;
 }
 
 export interface MarketwatchRow {

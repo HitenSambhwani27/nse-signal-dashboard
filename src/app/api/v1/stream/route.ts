@@ -2,20 +2,10 @@
  * Phase 4 SSE proxy. Do not use [...path] (it buffers response.text() + 20s timeout).
  * SharedWorker / MarketCache / terminal UI stay out of scope.
  */
+import { upstreamOrigin } from "@/api/upstream";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function upstreamOrigin(): string {
-  const raw =
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NSE_API_URL ||
-    "http://127.0.0.1:8080";
-  if (["mock", "fixture", "fixtures", ""].includes(raw.trim().toLowerCase())) {
-    return "http://127.0.0.1:8080";
-  }
-  return raw.replace(/\/$/, "");
-}
 
 export async function GET(request: Request) {
   const target = `${upstreamOrigin()}/api/v1/stream${new URL(request.url).search}`;

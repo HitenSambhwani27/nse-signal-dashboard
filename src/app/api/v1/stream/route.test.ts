@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
+import { upstreamOrigin } from "@/api/upstream";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -24,7 +25,9 @@ describe("SSE proxy", () => {
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     const headers = new Headers(init.headers);
     expect(headers.get("Last-Event-ID")).toBe("42");
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/stream?tokens=256265");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      `${upstreamOrigin()}/api/v1/stream?tokens=256265`,
+    );
   });
 
   it("passes through 503 Retry-After from admission", async () => {
@@ -44,5 +47,25 @@ describe("SSE proxy", () => {
     );
     expect(response.status).toBe(503);
     expect(response.headers.get("retry-after")).toBe("5");
+  });
+
+  it("sends the stream to API_BASE_URL including a tunnel port", async () => {
+    const previous = process.env.API_BASE_URL;
+    process.env.API_BASE_URL = "http://127.0.0.1:18080";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      body: new ReadableStream(),
+      headers: new Headers({ "content-type": "text/event-stream" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await GET(new Request("http://localhost/api/v1/stream?tokens=256265"));
+      expect(String(fetchMock.mock.calls[0][0])).toBe(
+        "http://127.0.0.1:18080/api/v1/stream?tokens=256265",
+      );
+    } finally {
+      if (previous === undefined) delete process.env.API_BASE_URL;
+      else process.env.API_BASE_URL = previous;
+    }
   });
 });

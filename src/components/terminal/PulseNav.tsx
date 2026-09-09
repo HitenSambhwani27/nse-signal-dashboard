@@ -46,7 +46,6 @@ export function PulseNav() {
               {item.icon}
             </span>
             <span className="pulse-nav-label">{item.label}</span>
-            {item.id === "alerts" ? <span className="pulse-nav-badge">3</span> : null}
           </button>
         );
       })}

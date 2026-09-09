@@ -19,7 +19,6 @@ const NIFTY: TerminalInstrument = {
   shortName: "NIFTY 50",
   exchange: "NSE",
   kind: "INDEX",
-  token: 256265,
 };
 
 const BANKNIFTY: TerminalInstrument = {
@@ -27,33 +26,32 @@ const BANKNIFTY: TerminalInstrument = {
   shortName: "BANKNIFTY",
   exchange: "NSE",
   kind: "INDEX",
-  token: 260105,
 };
 
-function eq(symbol: string, token: number): TerminalInstrument {
-  return { symbol, shortName: symbol, exchange: "NSE", kind: "EQ", token };
+function eq(symbol: string): TerminalInstrument {
+  return { symbol, shortName: symbol, exchange: "NSE", kind: "EQ" };
 }
 
 export const PHASE6A_INSTRUMENTS: TerminalInstrument[] = [
   NIFTY,
   BANKNIFTY,
-  eq("RELIANCE", 738561),
-  eq("HDFCBANK", 341249),
-  eq("INFY", 408065),
-  eq("ICICIBANK", 1270529),
-  eq("TCS", 2953217),
-  eq("SBIN", 779521),
-  eq("LT", 2939649),
-  eq("BHARTIARTL", 2714625),
-  eq("ITC", 424961),
-  eq("AXISBANK", 1510401),
-  eq("KOTAKBANK", 492033),
-  eq("MARUTI", 2815745),
-  eq("SUNPHARMA", 857857),
-  eq("WIPRO", 969473),
-  eq("HINDUNILVR", 356865),
-  eq("BAJFINANCE", 81153),
-  eq("ADANIENT", 6401),
+  eq("RELIANCE"),
+  eq("HDFCBANK"),
+  eq("INFY"),
+  eq("ICICIBANK"),
+  eq("TCS"),
+  eq("SBIN"),
+  eq("LT"),
+  eq("BHARTIARTL"),
+  eq("ITC"),
+  eq("AXISBANK"),
+  eq("KOTAKBANK"),
+  eq("MARUTI"),
+  eq("SUNPHARMA"),
+  eq("WIPRO"),
+  eq("HINDUNILVR"),
+  eq("BAJFINANCE"),
+  eq("ADANIENT"),
 ];
 
 export const PHASE6A_INDEX_STRIP: IndexStripItem[] = [
@@ -65,23 +63,23 @@ export const PHASE6A_INDEX_STRIP: IndexStripItem[] = [
 export const PHASE6A_MARKETWATCH: MarketwatchRow[] = [
   { source: PHASE6A_SOURCE, instrument: NIFTY, ltp: 24612.35, changePct: 0.75, volume: null, oi: null, bid: 24612.0, ask: 24612.7 },
   { source: PHASE6A_SOURCE, instrument: BANKNIFTY, ltp: 52140.2, changePct: 0.42, volume: null, oi: null, bid: 52138.0, ask: 52142.0 },
-  { source: PHASE6A_SOURCE, instrument: eq("RELIANCE", 738561), ltp: 1482.4, changePct: 1.12, volume: 4_820_000, oi: null, bid: 1482.1, ask: 1482.6 },
-  { source: PHASE6A_SOURCE, instrument: eq("HDFCBANK", 341249), ltp: 1648.9, changePct: -0.38, volume: 6_210_000, oi: null, bid: 1648.6, ask: 1649.1 },
-  { source: PHASE6A_SOURCE, instrument: eq("INFY", 408065), ltp: 1588.0, changePct: 1.38, volume: 3_140_000, oi: null, bid: 1587.7, ask: 1588.2 },
-  { source: PHASE6A_SOURCE, instrument: eq("ICICIBANK", 1270529), ltp: 1211.5, changePct: 0.21, volume: 5_040_000, oi: null, bid: 1211.2, ask: 1211.7 },
-  { source: PHASE6A_SOURCE, instrument: eq("TCS", 2953217), ltp: 3924.0, changePct: -0.18, volume: 1_120_000, oi: null, bid: 3923.5, ask: 3924.4 },
-  { source: PHASE6A_SOURCE, instrument: eq("SBIN", 779521), ltp: 812.35, changePct: 0.64, volume: 8_330_000, oi: null, bid: 812.2, ask: 812.5 },
-  { source: PHASE6A_SOURCE, instrument: eq("LT", 2939649), ltp: 3610.0, changePct: 0.08, volume: 890_000, oi: null, bid: 3609.5, ask: 3610.4 },
-  { source: PHASE6A_SOURCE, instrument: eq("BHARTIARTL", 2714625), ltp: 1654.25, changePct: -0.22, volume: 2_010_000, oi: null, bid: 1654.0, ask: 1654.5 },
-  { source: PHASE6A_SOURCE, instrument: eq("ITC", 424961), ltp: 412.8, changePct: 0.31, volume: 7_440_000, oi: null, bid: 412.7, ask: 412.9 },
-  { source: PHASE6A_SOURCE, instrument: eq("AXISBANK", 1510401), ltp: 1104.6, changePct: -0.14, volume: 4_180_000, oi: null, bid: 1104.4, ask: 1104.8 },
-  { source: PHASE6A_SOURCE, instrument: eq("KOTAKBANK", 492033), ltp: 1788.15, changePct: 0.00, volume: 1_560_000, oi: null, bid: 1788.0, ask: 1788.3 },
-  { source: PHASE6A_SOURCE, instrument: eq("MARUTI", 2815745), ltp: 12740.0, changePct: 0.54, volume: 420_000, oi: null, bid: 12738.0, ask: 12742.0 },
-  { source: PHASE6A_SOURCE, instrument: eq("SUNPHARMA", 857857), ltp: 1692.4, changePct: -0.09, volume: 1_880_000, oi: null, bid: 1692.1, ask: 1692.7 },
-  { source: PHASE6A_SOURCE, instrument: eq("WIPRO", 969473), ltp: 498.35, changePct: 0.46, volume: 5_620_000, oi: null, bid: 498.2, ask: 498.5 },
-  { source: PHASE6A_SOURCE, instrument: eq("HINDUNILVR", 356865), ltp: 2486.0, changePct: -0.27, volume: 980_000, oi: null, bid: 2485.5, ask: 2486.4 },
-  { source: PHASE6A_SOURCE, instrument: eq("BAJFINANCE", 81153), ltp: 7210.5, changePct: 0.88, volume: 1_240_000, oi: null, bid: 7209.0, ask: 7211.5 },
-  { source: PHASE6A_SOURCE, instrument: eq("ADANIENT", 6401), ltp: 2284.7, changePct: -1.12, volume: 3_560_000, oi: null, bid: 2284.2, ask: 2285.1 },
+  { source: PHASE6A_SOURCE, instrument: eq("RELIANCE"), ltp: 1482.4, changePct: 1.12, volume: 4_820_000, oi: null, bid: 1482.1, ask: 1482.6 },
+  { source: PHASE6A_SOURCE, instrument: eq("HDFCBANK"), ltp: 1648.9, changePct: -0.38, volume: 6_210_000, oi: null, bid: 1648.6, ask: 1649.1 },
+  { source: PHASE6A_SOURCE, instrument: eq("INFY"), ltp: 1588.0, changePct: 1.38, volume: 3_140_000, oi: null, bid: 1587.7, ask: 1588.2 },
+  { source: PHASE6A_SOURCE, instrument: eq("ICICIBANK"), ltp: 1211.5, changePct: 0.21, volume: 5_040_000, oi: null, bid: 1211.2, ask: 1211.7 },
+  { source: PHASE6A_SOURCE, instrument: eq("TCS"), ltp: 3924.0, changePct: -0.18, volume: 1_120_000, oi: null, bid: 3923.5, ask: 3924.4 },
+  { source: PHASE6A_SOURCE, instrument: eq("SBIN"), ltp: 812.35, changePct: 0.64, volume: 8_330_000, oi: null, bid: 812.2, ask: 812.5 },
+  { source: PHASE6A_SOURCE, instrument: eq("LT"), ltp: 3610.0, changePct: 0.08, volume: 890_000, oi: null, bid: 3609.5, ask: 3610.4 },
+  { source: PHASE6A_SOURCE, instrument: eq("BHARTIARTL"), ltp: 1654.25, changePct: -0.22, volume: 2_010_000, oi: null, bid: 1654.0, ask: 1654.5 },
+  { source: PHASE6A_SOURCE, instrument: eq("ITC"), ltp: 412.8, changePct: 0.31, volume: 7_440_000, oi: null, bid: 412.7, ask: 412.9 },
+  { source: PHASE6A_SOURCE, instrument: eq("AXISBANK"), ltp: 1104.6, changePct: -0.14, volume: 4_180_000, oi: null, bid: 1104.4, ask: 1104.8 },
+  { source: PHASE6A_SOURCE, instrument: eq("KOTAKBANK"), ltp: 1788.15, changePct: 0.00, volume: 1_560_000, oi: null, bid: 1788.0, ask: 1788.3 },
+  { source: PHASE6A_SOURCE, instrument: eq("MARUTI"), ltp: 12740.0, changePct: 0.54, volume: 420_000, oi: null, bid: 12738.0, ask: 12742.0 },
+  { source: PHASE6A_SOURCE, instrument: eq("SUNPHARMA"), ltp: 1692.4, changePct: -0.09, volume: 1_880_000, oi: null, bid: 1692.1, ask: 1692.7 },
+  { source: PHASE6A_SOURCE, instrument: eq("WIPRO"), ltp: 498.35, changePct: 0.46, volume: 5_620_000, oi: null, bid: 498.2, ask: 498.5 },
+  { source: PHASE6A_SOURCE, instrument: eq("HINDUNILVR"), ltp: 2486.0, changePct: -0.27, volume: 980_000, oi: null, bid: 2485.5, ask: 2486.4 },
+  { source: PHASE6A_SOURCE, instrument: eq("BAJFINANCE"), ltp: 7210.5, changePct: 0.88, volume: 1_240_000, oi: null, bid: 7209.0, ask: 7211.5 },
+  { source: PHASE6A_SOURCE, instrument: eq("ADANIENT"), ltp: 2284.7, changePct: -1.12, volume: 3_560_000, oi: null, bid: 2284.2, ask: 2285.1 },
 ];
 
 const CORE_BY_SYMBOL: Record<string, Omit<CoreSnapshot, "instrument" | "source">> = {
@@ -150,7 +148,6 @@ export function phase6aCandles(symbol: string): FixtureCandle[] {
     shortName: symbol,
     exchange: "NSE",
     kind: "EQ",
-    token: 0,
   }).ltp, 80);
 }
 
