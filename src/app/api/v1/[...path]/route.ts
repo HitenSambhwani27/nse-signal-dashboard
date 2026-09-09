@@ -19,6 +19,15 @@ export async function GET(
   context: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await context.params;
+  if (path[0] === "stream") {
+    return new NextResponse(
+      JSON.stringify({
+        error: "use_dedicated_stream_route",
+        detail: "GET /api/v1/stream is the unbuffered SSE proxy",
+      }),
+      { status: 308, headers: { location: `/api/v1/stream${request.nextUrl.search}` } },
+    );
+  }
   const encoded = path.map((segment) => encodeURIComponent(segment)).join("/");
   const url = `${upstreamOrigin()}/api/v1/${encoded}${request.nextUrl.search}`;
   try {
